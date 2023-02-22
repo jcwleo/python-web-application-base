@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Init API 호출 결과</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  </head>
+  <body onload="onLoad()">
+    <br>
+    <label for="call_id" style="margin-top: 10px; margin-left: 120px;">Call ID:</label>
+    <input type="text" id="call_id" name="call_id" required style="width: 400px;">
+    <div class="container mt-5">
+      <div class="card">
+        <div class="card-header">
+          Init API 호출
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group">
+              <label for="transcript">Query:</label><br>
+              <input type="text" id="transcript" name="transcript" required onkeydown="if (event.keyCode === 13) { event.preventDefault(); document.getElementById('initButton').click(); document.getElementById('transcript').select()}"><br>
+            </div>
+            <button type="button" id="initButton" class="btn btn-primary" onclick="callApi('dialoginit', 'api-result-1')">API 호출</button>
+          </form>
+          <hr>
+          <h5>API 호출 결과:</h5>
+          <div class="card">
+            <div class="card-body">
+              <pre id="api-result-1" class="mb-0"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-5">
+      <div class="card">
+        <div class="card-header">
+          STT API 호출
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group">
+              <label for="transcript">Query:</label><br>
+              <input type="text" id="transcript_1" name="transcript_1" required onkeydown="if (event.keyCode === 13) { event.preventDefault(); document.getElementById('sttButton').click(); document.getElementById('transcript_1').select()}"><br>
+            </div>
+            <button type="button" id="sttButton" class="btn btn-primary" onclick="callApi('stt', 'api-result-2')">API 호출</button>
+          </form>
+          <hr>
+          <h5>API 호출 결과:</h5>
+          <div class="card">
+            <div class="card-body">
+              <pre id="api-result-2" class="mb-0"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  
+    <div class="container mt-5">
+      <div class="card">
+        <div class="card-header">
+          Event API 호출
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group">
+              <label for="transcript">Query:</label><br>
+              <input type="text" id="transcript_2" name="transcript_2" required><br>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="callApi('event')">API 호출</button>
+          </form>
+          <hr>
+          <h5>API 호출 결과:</h5>
+          <div class="card">
+            <div class="card-body">
+              <pre id="api-result-3" class="mb-0"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      const time = Date.now()
+      function callApi(api_name, result_table_id) {
+        if(api_name == "dialoginit"){
+          // var body = $('#api-body').val();
+          
+
+          var body = {
+            "call_id": $('#call_id').val(),
+            "timestamp": time,
+            "dlp_request_id": "dlp_webdemo_test",
+            "task_name": "SeniorCarecall",
+            "task_info": {
+                "userName": "홍길동",
+                "callCenterName": "행복복지센터",
+                "callCount": "0",
+                "questionCount": "1"
+            },
+            "meta": {
+                "service_type": "SeniorCarecall",
+                "device_type": "SPK"
+            }
+          };
+        }else if(api_name == "stt"){
+          var body = {
+              "call_id": $('#call_id').val(),
+              "timestamp": time,
+              "dlp_request_id": "dlp_webdemo_test",
+              "stt": {
+                  "uttr_no": 1,
+                  "final": true,
+                  "results": [
+                      {
+                          "transcript": $('#transcript_1').val(),
+                          "score": "0.51570800000000006",
+                          "question_score": "0.87",
+                          "words": [
+                              {
+                                  "word": "",
+                                  "start_time": 0,
+                                  "end_time": 0
+                              }
+                          ],
+                          "align_error": "",
+                          "reject_code": ""
+                      }
+                  ]
+              }
+          };
+        }else if(api_name == "event"){ 
+          var body = {
+
+          };
+        }
+        
+        $.ajax({
+          contentType: "application/json; charset=utf-8",
+          url: '/'+api_name+'/v1.0',
+          method: 'POST',
+          data: JSON.stringify(body),
+          dataType: 'json',
+          cache: false,
+          success: function(result) {
+            // console.log(result);
+            var header = result.HEADER;
+            var body = result.BODY;
+            // console.log(body);
+            var directive = body.response.directive[0].content.speech;
+            var logs = body.logs;
+            var standard_memory = result.standard_memory;
+
+            // 결과 테이블 생성 및 데이터 추가
+            var table = $('<table>').addClass('table');
+            var tbody = $('<tbody>');
+
+            tbody.append($('<tr>').append($('<th>').text('Code'), $('<td>').text(header.RET_CODE)));
+            tbody.append($('<tr>').append($('<th>').text('Message'), $('<td>').text(header.MSG)));
+            tbody.append($('<tr>').append($('<th>').text('Directive'), $('<td>').text(directive)));
+            tbody.append($('<tr>').append($('<th>').text('StandardMemroy'), $('<td>').text(JSON.stringify(standard_memory))));
+            tbody.append($('<tr>').append($('<th>').text('Logs'), $('<td>').text(JSON.stringify(logs))));
+
+            table.append(tbody);
+            $('#'+result_table_id).html(table);
+            $('#'+result_table_id).css('white-space', 'pre-wrap');
+          },
+          error: function(xhr, status, error) {
+            $('#'+result_table_id).text('API 호출 실패: ' + error);
+          }
+        });
+      }
+
+      function generateUUID() {
+        var d = new Date().getTime();
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+          d += performance.now(); // use high-precision timer if available
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = (d + Math.random() * 16) % 16 | 0;
+          d = Math.floor(d / 16);
+          return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+      }
+
+      function onLoad() {
+        var callIdForm = document.getElementById("call_id");
+
+        var uuid = generateUUID();
+        callIdForm.value = uuid;
+      }
+
+      // document.getElementById("transcript").addEventListener("keyup", function(event) {
+      // event.preventDefault();
+      // if (event.keyCode === 13) {
+      //   callApi('dialoginit');
+      // }
+      // });
+
+
+      // document.getElementById("transcript_1").addEventListener("keyup", function(event) {
+      // event.preventDefault();
+      // if (event.keyCode === 13) {
+      //   callApi('stt');
+      // }
+      // });
+
+    </script>
+  </body>
+</html>
