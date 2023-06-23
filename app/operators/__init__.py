@@ -18,7 +18,15 @@ class BaseOperator:
     def operator(self) -> None:
         # TODO: role 파일 실행할 수 있는 단계
         # TEST
+        before_actor_instance = None
         for actor in self.actors:
+            sub_role_name = actor.__module__.split(".")[-2]
+            if before_actor_instance:
+                if before_actor_instance.skip_actor_in_sub_role:
+                    before_sub_role_name = before_actor_instance.__module__.split(".")[-2]
+                    if before_sub_role_name == sub_role_name:
+                        continue
+
             if not actor.match_function(self.context):
                 # TODO: match function 매칭 여부 로깅
                 continue
@@ -26,6 +34,7 @@ class BaseOperator:
             actor_instance.before_act(self.context)
             actor_instance.act(self.context)
             actor_instance.after_act(self.context)
+            before_actor_instance = actor_instance
 
     def after_operator(self) -> None:
         pass

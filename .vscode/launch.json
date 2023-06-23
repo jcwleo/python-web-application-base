@@ -13,8 +13,8 @@
                 "app.main:app",
                 "--reload"
             ],
-            "env":{
-                "PYTHONPATH":"${workspaceFolder}/"
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/"
             },
             "jinja": true,
             "justMyCode": true
